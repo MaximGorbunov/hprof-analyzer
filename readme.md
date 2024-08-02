@@ -1,4 +1,10 @@
 # CLI Tool for Java heap analysis
+
+### Build
+```
+ mkdir -p release && cd release && cmake -DCMAKE_BUILD_TYPE=Release .. && cd .. && cmake --build ./release --target hprof_analyzer
+```
+
 ### Usage
 ```
 heap_analyzer [-l <logFile>] [-h <heapFile>]
