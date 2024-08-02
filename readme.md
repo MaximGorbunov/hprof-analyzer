@@ -6,6 +6,15 @@
 ```
 Output file will be at release/build/hprof_analyzer
 ### Usage
+#### Take heap dump
+```
+jmap -dump:live,format=b,file=<heap_dump_file>.
+```
+#### Take VM info
+```
+jcmd <pid> VM.info
+```
+#### Use analyzer
 ```
 heap_analyzer [-l <logFile>] [-h <heapFile>]
 
