@@ -1,4 +1,4 @@
-# CLI Tool for Java heap analysis
+# CLI Tool for Java old-gen heap analysis
 
 ### Build
 ```
