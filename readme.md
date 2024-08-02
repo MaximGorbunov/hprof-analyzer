@@ -8,7 +8,7 @@ Output file will be at release/build/hprof_analyzer
 ### Usage
 #### Take heap dump
 ```
-jmap -dump:live,format=b,file=<heap_dump_file>
+jmap -dump:format=b,file=<heap_dump_file>
 ```
 #### Take VM info
 ```
