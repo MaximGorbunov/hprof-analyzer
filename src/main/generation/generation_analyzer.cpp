@@ -42,12 +42,12 @@ unique_ptr<vector<heap_region_info_t>> hprof_analyzer::parse_hear_region_info(ch
         uint64_t position = 0;
         uint64_t end_position = range_str.find(", ");
         heap_region_info region{};
-        region.bottom = std::stoull(range_str.substr(position, end_position - position), nullptr, 16);
+        region.bottom = std::stoll(range_str.substr(position, end_position - position), nullptr, 16);
         position = end_position + 2;
         end_position = range_str.find(", ", position);
-        region.top = std::stoull(range_str.substr(position, end_position - position), nullptr, 16);
+        region.top = std::stoll(range_str.substr(position, end_position - position), nullptr, 16);
         position = end_position + 2;
-        region.end = std::stoull(range_str.substr(position), nullptr, 16);
+        region.end = std::stoll(range_str.substr(position), nullptr, 16);
 
         // parse type
         start = line.find('|', line.find('|', end + 1));

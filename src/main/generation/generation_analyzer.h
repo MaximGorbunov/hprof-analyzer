@@ -11,9 +11,9 @@ typedef enum generation {
 } generation_t;
 
 typedef struct heap_region_info {
-  uint64_t bottom;
-  uint64_t top;
-  uint64_t end;
+  int64_t bottom;
+  int64_t top;
+  int64_t end;
   generation_t type;
 } heap_region_info_t;
 

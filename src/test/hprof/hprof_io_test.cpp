@@ -10,7 +10,7 @@ TEST(HprofParsingTest, IntegrationTest) {
   const hprof_analyzer::content_t &expected = hprof_analyzer::read_file("../../../src/test/resources/expected.csv");
   auto regions = hprof_analyzer::parse_hear_region_info(reinterpret_cast<char *>(log.buffer.get()));
   auto hprof_data = hprof_analyzer::read(heap.buffer.get(), *regions);
-  std::unordered_map<uint64_t, hprof_analyzer::instance_info_t> *instances = hprof_data->get_instances();
+  std::unordered_map<int64_t, hprof_analyzer::instance_info_t> *instances = hprof_data->get_instances();
   auto s = std::string(reinterpret_cast<char *>(expected.buffer.get()), expected.size);
   size_t pos = 0;
   size_t prev_pos = 0;

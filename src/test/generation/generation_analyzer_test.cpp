@@ -5,7 +5,7 @@
 
 class GenerationAnalyzerTest : public ::testing::Test {
  private:
-  void add_expected_region(uint64_t base, hprof_analyzer::generation_t type) {
+  void add_expected_region(int64_t base, hprof_analyzer::generation_t type) {
     hprof_analyzer::heap_region_info_t region{};
     region.bottom = base;
     region.top = base + 0x1;

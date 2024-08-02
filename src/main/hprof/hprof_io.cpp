@@ -16,11 +16,11 @@ using std::string, std::unique_ptr, std::unordered_map, std::make_unique, hprof_
     hprof_analyzer::object_array_info_t, hprof_analyzer::primitive_array_info_t,
     hprof_analyzer::instance_info_t, hprof_analyzer::outgoing_reference_t, std::list;
 
-static bool compare_region(const heap_region_info_t &region, const uint64_t addr) {
+static bool compare_region(const heap_region_info_t &region, const int64_t addr) {
   return region.bottom <= addr;
 }
 
-static uint8_t find_region_type(const std::vector<heap_region_info_t> &regions, uint64_t addr) {
+static uint8_t find_region_type(const std::vector<heap_region_info_t> &regions, int64_t addr) {
   const auto it = std::lower_bound(regions.begin(), regions.end(), addr, compare_region);
 
   if (it != regions.end() && it->bottom >= addr && addr < it->top) {
@@ -193,7 +193,7 @@ static inline void parse_heap_dump_segment_class_dump(u1 **bytes,
   *bytes += 2 * identifier_size;  // skip 2 reserved fields
   [[maybe_unused]]u4 instance_size = read_u4(bytes);
   [[maybe_unused]]u2 constant_pool_size = read_u2(bytes);
-  uint64_t class_size = 0;
+  int64_t class_size = 0;
   auto constant_pool_records = make_unique<vector<constant_pool_record_t>>(constant_pool_size);
   for (int i = 0; i < constant_pool_size; ++i) {
     constant_pool_record_t &record = constant_pool_records->at(i);
@@ -229,15 +229,15 @@ static inline void parse_heap_dump_segment_class_dump(u1 **bytes,
 
 static inline void parse_heap_dump_segment_instance_dump(u1 **bytes,
                                                          u4 identifier_size,
-                                                         unordered_map<uint64_t, instance_info_t> *instances,
+                                                         unordered_map<int64_t, instance_info_t> *instances,
                                                          const vector<heap_region_info_t> &regions) {
   u8 id = parse_identifier(bytes, identifier_size);
   [[maybe_unused]] u4 stack_trace_serial_number = read_u4(bytes);
-  u8 class_object_id = parse_identifier(bytes, identifier_size);
+  [[maybe_unused]] u8 class_object_id = parse_identifier(bytes, identifier_size);
   u4 num_bytes = read_u4(bytes);
-  u1 *fields = *bytes;
+  [[maybe_unused]] u1 *fields = *bytes;
 
-  *bytes += num_bytes;  // skip for now
+  *bytes += num_bytes;
   instances->insert({id,
                      instance_info_t{id, class_object_id, num_bytes, -1, 0, find_region_type(regions, id), false,
                                      fields,
@@ -253,7 +253,7 @@ static inline void parse_heap_dump_segment_object_array_dump(u1 **bytes,
   [[maybe_unused]] u4 stack_trace_serial_number = read_u4(bytes);
   u4 elements_number = read_u4(bytes);
   u8 array_class_object_id = parse_identifier(bytes, identifier_size);
-  uint64_t size = elements_number * identifier_size;
+  int64_t size = elements_number * identifier_size;
   hprof->add_object_array(object_array_info_t{id, elements_number, size, array_class_object_id,
                                               find_region_type(regions, id), *bytes});
   *bytes += size;
@@ -268,7 +268,7 @@ static inline void parse_heap_dump_segment_primitive_array_dump(u1 **bytes,
   [[maybe_unused]] u4 stack_trace_serial_number = read_u4(bytes);
   [[maybe_unused]] u4 elements_number = read_u4(bytes);
   [[maybe_unused]] u1 type = read_u1(bytes);
-  uint64_t size = elements_number * get_type_size(type, identifier_size);
+  int64_t size = elements_number * get_type_size(type, identifier_size);
   hprof->add_primitive_array(primitive_array_info_t{id, elements_number, size, type, find_region_type(regions, id),
                                                     *bytes});
   *bytes += size;
@@ -279,7 +279,7 @@ static inline void parse_heap_dump_segment(u1 *bytes,
                                            u4 size,
                                            u4 identifier_size,
                                            hprof_analyzer::HprofData *hprof_data,
-                                           unordered_map<uint64_t, instance_info_t> *instances,
+                                           unordered_map<int64_t, instance_info_t> *instances,
                                            const std::vector<heap_region_info_t> &regions) {
   u1 *end = bytes + size;
   while (bytes < end) {
@@ -316,14 +316,14 @@ static inline void parse_heap_dump_segment(u1 *bytes,
   }
 }
 
-static inline bool try_add_array(uint64_t root_ptr,
+static inline bool try_add_array(int64_t root_ptr,
                                  hprof_analyzer::HprofData *hprof,
-                                 unordered_map<uint64_t, instance_info_t> *instances,
+                                 unordered_map<int64_t, instance_info_t> *instances,
                                  instance_info_t *instance,
                                  list<instance_info_t *> *instance_queue,
                                  int64_t *outgoing_size,
                                  uint32_t identifier_size) {
-  list<uint64_t> array_elements_queue;
+  list<int64_t> array_elements_queue;
   array_elements_queue.push_back(root_ptr);
   bool added = false;
   while (!array_elements_queue.empty()) {
@@ -333,7 +333,7 @@ static inline bool try_add_array(uint64_t root_ptr,
       added = true;
       *outgoing_size += obj_array_ptr->size;
       auto array_ptr = obj_array_ptr->values;
-      for (uint64_t i = 0; i < obj_array_ptr->capacity; ++i) {
+      for (int64_t i = 0; i < obj_array_ptr->capacity; ++i) {
         auto obj_ref = parse_identifier(&array_ptr, identifier_size);
         if (obj_ref == 0) {
           // null pointer
@@ -356,7 +356,7 @@ static inline bool try_add_array(uint64_t root_ptr,
 
 static inline void scan_root(hprof_analyzer::HprofData *hprof,
                              uint32_t identifier_size,
-                             unordered_map<uint64_t, instance_info_t> *instances,
+                             unordered_map<int64_t, instance_info_t> *instances,
                              instance_info_t *instance_info) {
   list<instance_info_t *> queue;
   queue.push_back(instance_info);
@@ -446,7 +446,7 @@ unique_ptr<hprof_analyzer::HprofData> hprof_analyzer::read(unsigned char *buf,
                                                            const vector<heap_region_info_t> &regions) {
   auto hprof = make_unique<hprof_analyzer::HprofData>(hprof_analyzer::read_initial_header(&buf));
   auto identifier_size = hprof->get_identifier_size();
-  auto instances = make_unique<unordered_map<uint64_t, instance_info_t>>();
+  auto instances = make_unique<unordered_map<int64_t, instance_info_t>>();
   while (*buf != 0) {
     u1 tag_type = read_u1(&buf);
     [[maybe_unused]] u4 ts = read_u4(&buf);
@@ -493,7 +493,7 @@ unique_ptr<hprof_analyzer::HprofData> hprof_analyzer::read(unsigned char *buf,
   for (auto &array_entry : *hprof->get_object_arrays()) {
     if (hprof->is_root(array_entry.first)) {
       auto array_ptr = array_entry.second.values;
-      for (uint64_t i = 0; i < array_entry.second.capacity; ++i) {
+      for (int64_t i = 0; i < array_entry.second.capacity; ++i) {
         auto obj_ref = parse_identifier(&array_ptr, identifier_size);
         if (auto instance_search = instances->find(obj_ref); instance_search != instances->end()) {
           scan_root(hprof.get(), identifier_size, instances.get(), &instance_search->second);
@@ -521,8 +521,8 @@ unique_ptr<hprof_analyzer::header_t> hprof_analyzer::read_initial_header(unsigne
     interim_buf[i++] = static_cast<char>(value);
   } while (value != 0);
   interim_buf[i++] = 0;
-  u4 identifiers_size = read_u4(buf_ptr);
-  u8 timestamp = read_u8(buf_ptr);
+  [[maybe_unused]] u4 identifiers_size = read_u4(buf_ptr);
+  [[maybe_unused]] u8 timestamp = read_u8(buf_ptr);
   return make_unique<hprof_analyzer::header_t>(hprof_analyzer::header_t{string(interim_buf), identifiers_size,
                                                                         timestamp});
 }

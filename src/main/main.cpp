@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   const hprof_analyzer::content_t &log_file = read_file(*args.log);
   auto regions = hprof_analyzer::parse_hear_region_info(reinterpret_cast<char *>(log_file.buffer.get()));
   auto hprof_data = hprof_analyzer::read(ptr, *regions);
-  std::unordered_map<uint64_t, hprof_analyzer::stats_t> stats;
+  std::unordered_map<int64_t, hprof_analyzer::stats_t> stats;
   for (auto &item : *hprof_data->get_instances()) {
     auto &instance = item.second;
     if (item.second.region_type == hprof_analyzer::generation_t::OLD && item.second.live) {
