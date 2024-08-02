@@ -12,7 +12,7 @@ jmap -dump:live,format=b,file=<heap_dump_file>
 ```
 #### Take VM info
 ```
-jcmd <pid> VM.info
+jcmd <pid> VM.info > log.txt
 ```
 #### Use analyzer
 ```
